@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Pro</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-tasks"></i>
+                <span>TaskManager Pro</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+                <a href="#tasks" class="nav-link" data-section="tasks">
+                    <i class="fas fa-list-check"></i> Tasks
+                </a>
+                <a href="#profile" class="nav-link" data-section="profile">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="#motivation" class="nav-link" data-section="motivation">
+                    <i class="fas fa-lightbulb"></i> Motivation
+                </a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <div class="user-menu">
+                    <button class="user-avatar" id="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <a href="#profile"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#settings"><i class="fas fa-cog"></i> Settings</a>
+                        <hr>
+                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Login/Register Modal -->
+        <div class="modal" id="auth-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="auth-title">Welcome Back</h2>
+                    <button class="close-btn" id="close-auth">&times;</button>
+                </div>
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="register">Register</button>
+                </div>
+                <form id="auth-form">
+                    <div class="form-group" id="name-group" style="display: none;">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-group" id="role-group" style="display: none;">
+                        <label for="role">Role</label>
+                        <select id="role" name="role">
+                            <option value="user">User</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="auth-submit">Login</button>
+                </form>
+                <div class="auth-footer">
+                    <p id="auth-switch">Don't have an account? <a href="#" id="switch-auth">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section class="content-section active" id="dashboard-section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" id="quick-add-task">
+                            <i class="fas fa-plus"></i> Quick Add Task
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-tasks">0</h3>
+                            <p>Total Tasks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="pending-tasks">0</h3>
+                            <p>Pending</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-spinner"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="in-progress-tasks">0</h3>
+                            <p>In Progress</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="completed-tasks">0</h3>
+                            <p>Completed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tasks -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Tasks</h3>
+                            <a href="#tasks" class="view-all" onclick="viewAllTasks()">View All</a>
+                        </div>
+                        <div class="card-content">
+                            <div id="recent-tasks" class="task-list">
+                                <!-- Recent tasks will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Quote -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Daily Motivation</h3>
+                            <button class="refresh-btn" id="refresh-quote">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div id="daily-quote" class="quote-container">
+                                <div class="loading">Loading inspiration...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tasks Section -->
+        <section class="content-section" id="tasks-section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Task Management</h1>
+                    <div class="header-actions">
+                        <div class="search-group">
+                            <input type="text" id="task-search" placeholder="Search tasks..." class="search-input">
+                            <button class="btn btn-icon" onclick="clearSearch()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="filter-group">
+                            <select id="status-filter" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            <select id="priority-filter" class="filter-select">
+                                <option value="">All Priority</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="clearAllFilters()">
+                                <i class="fas fa-filter-circle-xmark"></i> Clear
+                            </button>
+                        </div>
+                        <div class="action-group">
+                            <button class="btn btn-secondary" onclick="exportTasks()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn btn-primary" id="add-task-btn">
+                                <i class="fas fa-plus"></i> Add Task
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Board -->
+                <div class="task-board">
+                    <div class="task-column" data-status="pending">
+                        <div class="column-header">
+                            <h3><i class="fas fa-clock"></i> Pending</h3>
+                            <span class="task-count" id="pending-count">0</span>
+                        </div>
+                        <div class="task-list" id="pending-list"></div>
+                    </div>
+                    <div class="task-column" data-status="in-progress">
+                        <div class="column-header">
+                            <h3><i class="fas fa-spinner"></i> In Progress</h3>
+                            <span class="task-count" id="in-progress-count">0</span>
+                        </div>
+                        <div class="task-list" id="in-progress-list"></div>
+                    </div>
+                    <div class="task-column" data-status="completed">
+                        <div class="column-header">
+                            <h3><i class="fas fa-check-circle"></i> Completed</h3>
+                            <span class="task-count" id="completed-count">0</span>
+                        </div>
+                        <div class="task-list" id="completed-list"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section class="content-section" id="profile-section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Profile Settings</h1>
+                </div>
+                <div class="profile-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Personal Information</h3>
+                        </div>
+                        <div class="card-content">
+                            <form id="profile-form">
+                                <div class="form-group">
+                                    <label for="profile-name">Full Name</label>
+                                    <input type="text" id="profile-name" name="name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" name="email" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-role">Role</label>
+                                    <input type="text" id="profile-role" name="role" readonly>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Change Password</h3>
+                        </div>
+                        <div class="card-content">
+                            <form id="password-form">
+                                <div class="form-group">
+                                    <label for="current-password">Current Password</label>
+                                    <input type="password" id="current-password" name="currentPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">New Password</label>
+                                    <input type="password" id="new-password" name="newPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Confirm Password</label>
+                                    <input type="password" id="confirm-password" name="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Motivation Section -->
+        <section class="content-section" id="motivation-section">
+            <div class="container">
+                <div class="section-header">
+                    <h1>Motivation Center</h1>
+                </div>
+                <div class="motivation-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Inspirational Quote</h3>
+                            <button class="refresh-btn" id="refresh-motivation-quote">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div id="motivation-quote" class="quote-container large">
+                                <div class="loading">Loading inspiration...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>AI Productivity Tip</h3>
+                            <button class="refresh-btn" id="refresh-ai-tip">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-content">
+                            <div id="ai-tip" class="tip-container">
+                                <div class="loading">Loading productivity tip...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Task Modal -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="task-modal-title">Add New Task</h2>
+                <button class="close-btn" id="close-task-modal">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Title *</label>
+                    <input type="text" id="task-title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea id="task-description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-status">Status</label>
+                        <select id="task-status" name="status">
+                            <option value="pending" selected>Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="task-due-date">Due Date</label>
+                    <input type="date" id="task-due-date" name="dueDate">
+                </div>
+                <div class="form-group">
+                    <label for="task-tags">Tags (comma separated)</label>
+                    <input type="text" id="task-tags" name="tags" placeholder="work, urgent, meeting">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-task">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="save-task">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="app-simple.js"></script>
+</body>
+</html>
