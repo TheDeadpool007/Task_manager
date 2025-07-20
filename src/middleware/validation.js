@@ -20,18 +20,16 @@ const validateUserRegistration = [
     .normalizeEmail()
     .withMessage('Please provide a valid email'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+    .isLength({ min: 1 })
+    .withMessage('Password is required'),
   body('firstName')
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name is required and must be less than 50 characters'),
   body('lastName')
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name is required and must be less than 50 characters'),
   body('role')
     .optional()
     .isIn(['admin', 'manager', 'user'])
@@ -55,33 +53,28 @@ const validateUserLogin = [
 const validateTaskCreation = [
   body('title')
     .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Title must be between 3 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Title is required and must be less than 200 characters'),
   body('description')
+    .optional()
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Description must be between 10 and 2000 characters'),
+    .isLength({ max: 2000 })
+    .withMessage('Description must be less than 2000 characters'),
   body('status')
     .optional()
-    .isIn(['pending', 'in-progress', 'completed', 'cancelled'])
-    .withMessage('Status must be pending, in-progress, completed, or cancelled'),
+    .isIn(['todo', 'in-progress', 'completed', 'pending', 'cancelled'])
+    .withMessage('Invalid status'),
   body('priority')
     .optional()
     .isIn(['low', 'medium', 'high', 'urgent'])
     .withMessage('Priority must be low, medium, high, or urgent'),
   body('category')
     .optional()
-    .isIn(['work', 'personal', 'study', 'health', 'finance', 'other'])
-    .withMessage('Category must be work, personal, study, health, finance, or other'),
+    .trim(),
   body('dueDate')
+    .optional()
     .isISO8601()
-    .toDate()
-    .custom((value) => {
-      if (value <= new Date()) {
-        throw new Error('Due date must be in the future');
-      }
-      return true;
-    }),
+    .toDate(),
   body('estimatedHours')
     .optional()
     .isFloat({ min: 0, max: 1000 })
@@ -93,8 +86,8 @@ const validateTaskCreation = [
   body('tags.*')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 30 })
-    .withMessage('Each tag must be between 1 and 30 characters'),
+    .isLength({ max: 30 })
+    .withMessage('Each tag must be less than 30 characters'),
   handleValidationErrors
 ];
 
@@ -103,35 +96,28 @@ const validateTaskUpdate = [
   body('title')
     .optional()
     .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Title must be between 3 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Title must be less than 200 characters'),
   body('description')
     .optional()
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Description must be between 10 and 2000 characters'),
+    .isLength({ max: 2000 })
+    .withMessage('Description must be less than 2000 characters'),
   body('status')
     .optional()
-    .isIn(['pending', 'in-progress', 'completed', 'cancelled'])
-    .withMessage('Status must be pending, in-progress, completed, or cancelled'),
+    .isIn(['todo', 'in-progress', 'completed', 'pending', 'cancelled'])
+    .withMessage('Invalid status'),
   body('priority')
     .optional()
     .isIn(['low', 'medium', 'high', 'urgent'])
     .withMessage('Priority must be low, medium, high, or urgent'),
   body('category')
     .optional()
-    .isIn(['work', 'personal', 'study', 'health', 'finance', 'other'])
-    .withMessage('Category must be work, personal, study, health, finance, or other'),
+    .trim(),
   body('dueDate')
     .optional()
     .isISO8601()
-    .toDate()
-    .custom((value) => {
-      if (value <= new Date()) {
-        throw new Error('Due date must be in the future');
-      }
-      return true;
-    }),
+    .toDate(),
   body('estimatedHours')
     .optional()
     .isFloat({ min: 0, max: 1000 })
@@ -147,8 +133,8 @@ const validateTaskUpdate = [
   body('tags.*')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 30 })
-    .withMessage('Each tag must be between 1 and 30 characters'),
+    .isLength({ max: 30 })
+    .withMessage('Each tag must be less than 30 characters'),
   handleValidationErrors
 ];
 
@@ -167,10 +153,8 @@ const validatePasswordChange = [
     .notEmpty()
     .withMessage('Current password is required'),
   body('newPassword')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('New password must contain at least one lowercase letter, one uppercase letter, and one number'),
+    .isLength({ min: 1 })
+    .withMessage('New password is required'),
   body('confirmPassword')
     .custom((value, { req }) => {
       if (value !== req.body.newPassword) {
@@ -186,13 +170,13 @@ const validateProfileUpdate = [
   body('firstName')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters'),
   body('lastName')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters'),
   body('preferences.theme')
     .optional()
     .isIn(['light', 'dark', 'auto'])

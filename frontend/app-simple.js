@@ -1,7 +1,7 @@
 // Configuration
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:3002/api',
-    SOCKET_URL: 'http://localhost:3002'
+    API_BASE_URL: 'http://localhost:5000/api',
+    SOCKET_URL: 'http://localhost:5000'
 };
 
 // Application State
@@ -39,8 +39,16 @@ class AppState {
 
     clearAuth() {
         this.user = null;
+        // Clear all localStorage data to prevent token conflicts
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('theme');
+        // Clear any other potential authentication data
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('auth') || key.includes('token') || key.includes('user')) {
+                localStorage.removeItem(key);
+            }
+        });
     }
 
     setTasks(tasks) {
@@ -94,7 +102,12 @@ class API {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Request failed');
+                // Handle validation errors with details
+                if (data.details && Array.isArray(data.details)) {
+                    const errorMessages = data.details.map(detail => detail.msg).join(', ');
+                    throw new Error(`Validation Error: ${errorMessages}`);
+                }
+                throw new Error(data.error || data.message || 'Request failed');
             }
 
             return data;
@@ -134,8 +147,12 @@ class AuthManager {
     static async login(email, password) {
         try {
             const response = await API.post('/auth/login', { email, password });
-            appState.setToken(response.token);
-            appState.setUser(response.user);
+            // Handle the data structure from backend - response follows API doc format
+            const token = response.data.token;
+            const user = response.data.user;
+            
+            appState.setToken(token);
+            appState.setUser(user);
             return response;
         } catch (error) {
             throw error;
@@ -145,8 +162,9 @@ class AuthManager {
     static async register(userData) {
         try {
             const response = await API.post('/auth/register', userData);
-            appState.setToken(response.token);
-            appState.setUser(response.user);
+            // Don't automatically log in after registration
+            // appState.setToken(response.token);
+            // appState.setUser(response.user);
             return response;
         } catch (error) {
             throw error;
@@ -166,7 +184,8 @@ class AuthManager {
     static async getProfile() {
         try {
             const response = await API.get('/auth/profile');
-            appState.setUser(response.user);
+            // Backend returns data.user according to API documentation
+            appState.setUser(response.data.user);
             return response;
         } catch (error) {
             throw error;
@@ -183,8 +202,9 @@ class TaskManager {
     static async getAllTasks() {
         try {
             const response = await API.get('/tasks');
-            appState.setTasks(response.tasks);
-            return response.tasks;
+            // Backend returns data.tasks according to API documentation
+            appState.setTasks(response.data.tasks);
+            return response.data.tasks;
         } catch (error) {
             throw error;
         }
@@ -193,8 +213,9 @@ class TaskManager {
     static async createTask(taskData) {
         try {
             const response = await API.post('/tasks', taskData);
-            appState.addTask(response.task);
-            return response.task;
+            // Backend returns data.task according to API documentation
+            appState.addTask(response.data.task);
+            return response.data.task;
         } catch (error) {
             throw error;
         }
@@ -203,8 +224,9 @@ class TaskManager {
     static async updateTask(taskId, updateData) {
         try {
             const response = await API.put(`/tasks/${taskId}`, updateData);
-            appState.updateTask(response.task);
-            return response.task;
+            // Backend returns data.task according to API documentation
+            appState.updateTask(response.data.task);
+            return response.data.task;
         } catch (error) {
             throw error;
         }
@@ -384,7 +406,8 @@ function updateRecentTasks() {
 async function loadDailyQuote() {
     try {
         const response = await API.get('/quotes/daily');
-        displayQuote(response.quote, 'daily-quote');
+        // Backend returns data.quote according to API documentation
+        displayQuote(response.data.quote, 'daily-quote');
     } catch (error) {
         document.getElementById('daily-quote').innerHTML = '<p class="text-muted">Failed to load quote</p>';
         console.error('Quote error:', error);
@@ -482,6 +505,9 @@ function updateTaskDisplay() {
 
         list.innerHTML = tasks.map(task => createTaskCard(task)).join('');
     });
+
+    // Add event listeners after rendering
+    addTaskActionListeners();
 }
 
 // Helper functions for task status management
@@ -504,8 +530,13 @@ function getNextStatusLabel(currentStatus) {
 }
 
 function createTaskCard(task) {
+    // Ensure functions are available
+    if (typeof window.duplicateTask !== 'function') {
+        console.error('duplicateTask function not available on window');
+    }
+    
     return `
-        <div class="task-card" data-task-id="${task._id}" draggable="true">
+        <div class="task-card status-${task.status}" data-task-id="${task._id}" draggable="true">
             <div class="task-header">
                 <h4 class="task-title">${task.title}</h4>
                 <span class="task-priority ${task.priority}">${task.priority}</span>
@@ -513,7 +544,7 @@ function createTaskCard(task) {
             ${task.description ? `<p class="task-description">${task.description}</p>` : ''}
             <div class="task-meta">
                 <div class="task-tags">
-                    ${task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
+                    ${(task.tags || []).map(tag => `<span class="task-tag">${tag}</span>`).join('')}
                 </div>
                 ${task.dueDate ? `<span class="task-due-date ${new Date(task.dueDate) < new Date() ? 'overdue' : ''}">
                     <i class="fas fa-calendar"></i> ${formatDate(task.dueDate)}
@@ -521,26 +552,26 @@ function createTaskCard(task) {
             </div>
             <div class="task-actions">
                 <div class="action-group-left">
-                    <button class="task-action-btn" onclick="duplicateTask('${task._id}')" title="Duplicate Task">
+                    <button class="task-action-btn duplicate-btn" data-task-id="${task._id}" title="Duplicate Task">
                         <i class="fas fa-copy"></i>
                     </button>
-                    <button class="task-action-btn" onclick="moveTaskTo('${task._id}', '${getNextStatus(task.status)}')" title="Move to ${getNextStatusLabel(task.status)}">
+                    <button class="task-action-btn move-task-btn" data-task-id="${task._id}" data-next-status="${getNextStatus(task.status)}" title="Move to ${getNextStatusLabel(task.status)}">
                         <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
                 <div class="action-group-right">
-                    <button class="task-action-btn" onclick="editTask('${task._id}')" title="Edit Task">
+                    <button class="task-action-btn edit-btn" data-task-id="${task._id}" title="Edit Task">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="task-action-btn task-delete-btn" onclick="deleteTask('${task._id}')" title="Delete Task">
+                    <button class="task-action-btn task-delete-btn delete-btn" data-task-id="${task._id}" title="Delete Task">
                         <i class="fas fa-trash"></i>
                     </button>
                     ${task.status !== 'completed' ? `
-                        <button class="task-action-btn task-complete-btn" onclick="markComplete('${task._id}')" title="Mark as Complete">
+                        <button class="task-action-btn task-complete-btn mark-complete-btn" data-task-id="${task._id}" title="Mark as Complete">
                             <i class="fas fa-check"></i>
                         </button>
                     ` : `
-                        <button class="task-action-btn task-undo-btn" onclick="moveTaskTo('${task._id}', 'in-progress')" title="Move back to In Progress">
+                        <button class="task-action-btn task-undo-btn undo-btn" data-task-id="${task._id}" title="Move back to In Progress">
                             <i class="fas fa-undo"></i>
                         </button>
                     `}
@@ -672,7 +703,8 @@ async function loadMotivation() {
 async function loadMotivationQuote() {
     try {
         const response = await API.get('/quotes/random');
-        displayQuote(response.quote, 'motivation-quote');
+        // Backend returns data.quote according to API documentation
+        displayQuote(response.data.quote, 'motivation-quote');
     } catch (error) {
         document.getElementById('motivation-quote').innerHTML = '<p class="text-muted">Failed to load quote</p>';
         console.error('Quote error:', error);
@@ -682,8 +714,9 @@ async function loadMotivationQuote() {
 async function loadAITip() {
     try {
         const response = await API.get('/ai/tip');
+        // Backend returns data.tip according to API documentation
         document.getElementById('ai-tip').innerHTML = `
-            <div class="tip-text">${response.tip}</div>
+            <div class="tip-text">${response.data.tip}</div>
         `;
     } catch (error) {
         document.getElementById('ai-tip').innerHTML = '<p class="text-muted">Failed to load AI tip</p>';
@@ -761,6 +794,13 @@ function switchAuthTab(tabType) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Clear any corrupted authentication data on page load
+    const token = appState.getToken();
+    if (token && token.length < 10) {
+        console.warn('Invalid token detected, clearing authentication data');
+        appState.clearAuth();
+    }
+
     // Set initial theme
     document.documentElement.setAttribute('data-theme', appState.theme);
     const themeIcon = document.querySelector('#theme-toggle i');
@@ -863,18 +903,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         formData.get('email'),
                         formData.get('password')
                     );
+                    hideModal('auth-modal');
+                    showSection('dashboard');
+                    showToast('Login successful!', 'success');
                 } else {
+                    const fullName = formData.get('name') || '';
+                    const nameParts = fullName.trim().split(' ');
+                    const firstName = nameParts[0] || '';
+                    const lastName = nameParts.slice(1).join(' ') || '';
+
                     await AuthManager.register({
-                        name: formData.get('name'),
+                        firstName: firstName,
+                        lastName: lastName,
                         email: formData.get('email'),
                         password: formData.get('password'),
                         role: formData.get('role')
                     });
+                    
+                    // Reset form and switch to login tab
+                    authForm.reset();
+                    switchAuthTab('login');
+                    showToast('Registration successful! Please log in with your credentials.', 'success');
                 }
 
-                hideModal('auth-modal');
-                showSection('dashboard');
-                showToast(`${currentTab === 'login' ? 'Login' : 'Registration'} successful!`, 'success');
                 hideLoading();
             } catch (error) {
                 hideLoading();
@@ -997,6 +1048,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.changePassword = changePassword;
     window.clearAllFilters = clearAllFilters;
 
+    // Debug: Confirm functions are attached
+    console.log('✅ All task functions attached to window object');
+    console.log('Functions available:', {
+        duplicateTask: typeof window.duplicateTask,
+        moveTaskTo: typeof window.moveTaskTo,
+        editTask: typeof window.editTask,
+        deleteTask: typeof window.deleteTask,
+        markComplete: typeof window.markComplete
+    });
+
     // Profile form handling
     const profileForm = document.getElementById('profile-form');
     if (profileForm) {
@@ -1025,6 +1086,52 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup keyboard shortcuts
     setupKeyboardShortcuts();
 });
+
+// Task Action Listeners
+function addTaskActionListeners() {
+    document.querySelectorAll('.duplicate-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            duplicateTask(taskId);
+        });
+    });
+
+    document.querySelectorAll('.move-task-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            const nextStatus = e.currentTarget.dataset.nextStatus;
+            moveTaskTo(taskId, nextStatus);
+        });
+    });
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            editTask(taskId);
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            deleteTask(taskId);
+        });
+    });
+
+    document.querySelectorAll('.mark-complete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            markComplete(taskId);
+        });
+    });
+
+    document.querySelectorAll('.undo-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const taskId = e.currentTarget.dataset.taskId;
+            moveTaskTo(taskId, 'in-progress');
+        });
+    });
+}
 
 // Additional Button Functions
 async function viewAllTasks() {
@@ -1070,6 +1177,7 @@ async function clearAllFilters() {
 }
 
 async function duplicateTask(taskId) {
+    console.log('duplicateTask invoked with taskId:', taskId);
     const task = appState.tasks.find(t => t._id == taskId);
     if (!task) {
         showToast('Task not found', 'error');
@@ -1080,14 +1188,24 @@ async function duplicateTask(taskId) {
         title: `Copy of ${task.title}`,
         description: task.description,
         priority: task.priority,
-        status: 'pending', // Always start duplicated tasks as pending
+        status: task.status, // Preserve the original task status
         dueDate: task.dueDate,
         tags: [...(task.tags || [])] // Handle case where tags might be undefined
     };
 
     try {
         showLoading();
-        await createTask(duplicatedTask);
+        await TaskManager.createTask(duplicatedTask);
+        
+        // Clear filters to ensure the new task is visible
+        clearAllFilters(); 
+        
+        // No need to call updateTaskDisplay() here, as clearAllFilters() already does it.
+        
+        if (appState.currentSection === 'dashboard') {
+            updateStatsDisplay();
+            updateRecentTasks();
+        }
         hideLoading();
         showToast('Task duplicated successfully!', 'success');
     } catch (error) {

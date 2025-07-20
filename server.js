@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3002", "http://localhost:8080", "http://127.0.0.1:8080"],
+    origin: ["http://localhost:3000", "http://localhost:5000", "http://localhost:8080", "http://127.0.0.1:8080"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -40,7 +40,7 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3002", "http://localhost:8080", "http://127.0.0.1:8080"],
+  origin: ["http://localhost:3000", "http://localhost:5000", "http://localhost:8080", "http://127.0.0.1:8080"],
   credentials: true
 }));
 

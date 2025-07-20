@@ -9,14 +9,13 @@ const taskSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Task description is required'],
     trim: true,
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'completed', 'cancelled'],
-    default: 'pending'
+    enum: ['todo', 'pending', 'in-progress', 'completed', 'cancelled'],
+    default: 'todo'
   },
   priority: {
     type: String,
@@ -25,18 +24,10 @@ const taskSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['work', 'personal', 'study', 'health', 'finance', 'other'],
     default: 'other'
   },
   dueDate: {
-    type: Date,
-    required: [true, 'Due date is required'],
-    validate: {
-      validator: function(value) {
-        return value > new Date();
-      },
-      message: 'Due date must be in the future'
-    }
+    type: Date
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
