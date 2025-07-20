@@ -692,6 +692,11 @@ async function loadMotivation() {
             return;
         }
 
+        // Ensure tasks are loaded to provide context for AI tips
+        if (appState.tasks.length === 0) {
+            await TaskManager.getAllTasks();
+        }
+
         loadMotivationQuote();
         loadAITip();
     } catch (error) {
@@ -712,16 +717,50 @@ async function loadMotivationQuote() {
 }
 
 async function loadAITip() {
+    const tipContainer = document.getElementById('ai-tip');
     try {
-        const response = await API.get('/ai/tip');
-        // Backend returns data.tip according to API documentation
-        document.getElementById('ai-tip').innerHTML = `
-            <div class="tip-text">${response.data.tip}</div>
+        // Find a relevant, non-completed task to get a tip for
+        const relevantTask = appState.tasks.find(t => t.status === 'in-progress') || appState.tasks.find(t => t.status === 'pending');
+        
+        if (!relevantTask) {
+            tipContainer.innerHTML = '<p class="text-muted">Create a task to get an AI productivity tip!</p>';
+            return;
+        }
+
+        const response = await API.post('/ai/tip', { taskTitle: relevantTask.title });
+        
+        // Format the tip text for better readability
+        const formattedTip = formatAITip(response.data.tip);
+        
+        tipContainer.innerHTML = `
+            <div class="tip-text">${formattedTip}</div>
         `;
     } catch (error) {
-        document.getElementById('ai-tip').innerHTML = '<p class="text-muted">Failed to load AI tip</p>';
         console.error('AI tip error:', error);
+        tipContainer.innerHTML = `<p class="text-muted" style="color: var(--error);">Failed to load AI tip. <br><small>Error: ${error.message}</small></p>`;
     }
+}
+
+// Format AI tip text for better readability
+function formatAITip(tipText) {
+    if (!tipText) return 'No tip available';
+    
+    // Split by numbered points (1. 2. 3. etc.)
+    let formatted = tipText.replace(/(\d+\.\s*\*\*[^:]+\*\*:)/g, '<br><br><strong>$1</strong><br>');
+    
+    // Format bold text (**text**)
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Add line breaks before numbered items if not already there
+    formatted = formatted.replace(/(\s)(\d+\.\s)/g, '<br><br>$2');
+    
+    // Clean up multiple consecutive line breaks
+    formatted = formatted.replace(/(<br>\s*){3,}/g, '<br><br>');
+    
+    // Remove leading line breaks
+    formatted = formatted.replace(/^(<br>\s*)+/, '');
+    
+    return formatted;
 }
 
 // Utility Functions

@@ -618,12 +618,41 @@ textarea:focus {
 .task-card {
     background: var(--bg-primary);
     border: 1px solid var(--border-light);
+    border-left: 4px solid transparent;
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-md);
     cursor: pointer;
     transition: all var(--transition-fast);
     box-shadow: var(--shadow-sm);
+}
+
+/* Task Card Status Colors */
+.task-card.status-pending {
+    background-color: rgba(var(--error-rgb), 0.05);
+    border-left-color: var(--error);
+}
+
+[data-theme="dark"] .task-card.status-pending {
+    background-color: rgba(var(--error-rgb), 0.15);
+}
+
+.task-card.status-in-progress {
+    background-color: rgba(var(--warning-rgb), 0.05);
+    border-left-color: var(--warning);
+}
+
+[data-theme="dark"] .task-card.status-in-progress {
+    background-color: rgba(var(--warning-rgb), 0.15);
+}
+
+.task-card.status-completed {
+    background-color: rgba(var(--success-rgb), 0.05);
+    border-left-color: var(--success);
+}
+
+[data-theme="dark"] .task-card.status-completed {
+    background-color: rgba(var(--success-rgb), 0.15);
 }
 
 .task-card:hover {

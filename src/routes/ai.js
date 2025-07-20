@@ -32,18 +32,12 @@ router.use(aiRateLimit);
 
 // Validation middleware for tip generation
 const validateTipRequest = [
-  body('taskDescription')
+  body('taskTitle')
     .trim()
-    .isLength({ min: 10, max: 500 })
-    .withMessage('Task description must be between 10 and 500 characters'),
-  body('priority')
-    .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Priority must be low, medium, high, or urgent'),
-  body('category')
-    .optional()
-    .isIn(['work', 'personal', 'study', 'health', 'finance', 'other'])
-    .withMessage('Category must be work, personal, study, health, finance, or other'),
+    .notEmpty()
+    .withMessage('Task title is required')
+    .isLength({ min: 3, max: 100 })
+    .withMessage('Task title must be between 3 and 100 characters'),
   handleValidationErrors
 ];
 

@@ -4,17 +4,12 @@ const Task = require('../models/Task');
 // Generate productivity tip for a task
 const generateProductivityTip = async (req, res) => {
   try {
-    const { taskDescription, priority = 'medium', category = 'general' } = req.body;
+    const { taskTitle, priority = 'medium', category = 'general' } = req.body;
 
-    if (!taskDescription || taskDescription.trim().length < 10) {
-      return res.status(400).json({
-        success: false,
-        error: 'Task description must be at least 10 characters long'
-      });
-    }
+    // The validation is now handled by the middleware in ai.js route, so we can remove the manual check.
 
-    const tip = await aiService.generateProductivityTip(
-      taskDescription,
+    const tipResponse = await aiService.generateProductivityTip(
+      taskTitle, // Use taskTitle instead of taskDescription
       req.user._id.toString(),
       priority,
       category
@@ -23,7 +18,7 @@ const generateProductivityTip = async (req, res) => {
     res.json({
       success: true,
       data: { 
-        tip,
+        tip: tipResponse.tip, // Extract just the tip text from the response object
         usage: aiService.getUserUsage(req.user._id.toString())
       }
     });
